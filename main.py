@@ -86,7 +86,7 @@ class LetterInput(TextInput):
 
 class UniqueLettersInput(TextInput):
     def unique_letters(self, c, undo):
-        if not c.isalpha() or c in self.text:
+        if not c.isalpha() or c.upper() in self.text:
             return ''
         else:
             return c.upper()
