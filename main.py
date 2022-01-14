@@ -6,12 +6,8 @@ from kivy.properties import BooleanProperty
 
 import re
 import json
+from itertools import permutations
 
-# TODO: add input_filter to letter input to only take one letter
-# TODO: add input_filter to other inputs to just accept letters, with no repeat letters
-# TODO: make sure 3 lists of letters are mutually exclusive
-# TODO: change search string, not working with just a set of pos unknown letters
-# TODO: Change ScrollView to RecycleView? (or split loading it 2)
 
 kv = """
 <LetterInput>:
@@ -19,6 +15,7 @@ kv = """
     size: 30, 30
     write_tab: False
     on_text: app.process_text()
+    input_filter: self.one_letter
     
 BoxLayout:
     orientation: 'vertical'
@@ -43,11 +40,12 @@ BoxLayout:
         Label:
             size_hint_x: .3
             text: 'Not in Word'
-        TextInput:
+        UniqueLettersInput:
             id: not_in_word
             hint_text: 'Enter the letters not in the word'
             write_tab: False
             on_text: app.process_text()
+            input_filter: self.unique_letters
             
     BoxLayout:
         size_hint_y: None
@@ -55,11 +53,12 @@ BoxLayout:
         Label:
             size_hint_x: .3
             text: 'Position Unknown'
-        TextInput:
+        UniqueLettersInput:
             id: pos_unknown
             hint_text: 'Enter the letters in the word, position unknown'
             write_tab: False
             on_text: app.process_text()
+            input_filter: self.unique_letters
     BoxLayout:
         size_hint_y: None
         height: 48
@@ -81,7 +80,16 @@ BoxLayout:
 
 
 class LetterInput(TextInput):
-    pass
+    def one_letter(self, c, undo):
+        return c.upper() if len(self.text) == 0 and c.isalpha() else ''
+
+
+class UniqueLettersInput(TextInput):
+    def unique_letters(self, c, undo):
+        if not c.isalpha() or c in self.text:
+            return ''
+        else:
+            return c.upper()
 
 
 class WordleCheat(App):
@@ -120,25 +128,32 @@ class WordleCheat(App):
         else:
             nots = None
         # print(nots)
-        # letters in word, pos unknown
-        if p.pos_unknown.text:
-            pos_unknown = '[' + p.pos_unknown.text.lower() + ']'
-        else:
-            pos_unknown = None
+        # letters in word and pos unknown
         search = []
-        indices = [i for i, v in enumerate(known) if v == '.']
-        if pos_unknown:
-            for index in indices:
-                k = known[::]
-                k[index] = pos_unknown
-                k.insert(0,'(')
-                k.append('\n)|')
-                search.extend(k)
-            search[-1] = '\n)' # remove trailing |
+        if p.pos_unknown.text:
+            pos_unknown = p.pos_unknown.text.lower()
+            count = known.count('.') - len(pos_unknown)
+            ss = pos_unknown + '.' * count
+            # print(f'{ss=}')
+            ss_permutations = permutations(ss, len(ss))
+            perms = set(ss_permutations)  # remove duplicates
+            # position and value of know characters
+            known_poss = [(i, c) for i, c in enumerate(known) if c != '.']
+            # insert known data into permuted data
+            known_and_pos_unknowns = []
+            for perm in perms:
+                # tuple to list
+                pl = list(perm)
+                for k in known_poss:
+                    pl.insert(k[0], k[1])
+                known_and_pos_unknowns.append(pl)
+            # Convert list of known and unknown chars to search string
+            for term in known_and_pos_unknowns:
+                search.append('(' + ''.join(term) + '\n)|')
+            search = ''.join(search)[:-1]  # remove trailing |
         else:
-            search = known[::]
-        print(search)
-        search = ''.join(search)
+            search = ''.join(known[::])
+
         if nots:
             search = search.replace('.', nots)
         # print(f'{repr(search)}')
@@ -163,9 +178,16 @@ class WordleCheat(App):
         self.no_input = not any([w.text for w in p.letters.children] + [p.not_in_word.text] + [p.pos_unknown.text])
         # get letters from input
         letters = [w.text for w in p.letters.children]
+        # if letter is in a known position remove from pos_unknown and not_in_word
         for letter in letters:
             if letter in p.pos_unknown.text:
                 p.pos_unknown.text = p.pos_unknown.text.replace(letter, '')
+            if letter in p.not_in_word.text:
+                p.not_in_word.text = p.not_in_word.text.replace(letter, '')
+        # if letter is in pos_known remove from not_in_word
+        for letter in p.pos_unknown.text:
+            if letter in p.not_in_word.text:
+                p.not_in_word.text = p.not_in_word.text.replace(letter, '')
 
 
 WordleCheat().run()
