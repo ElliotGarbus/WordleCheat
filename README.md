@@ -1,4 +1,5 @@
 # WordleCheat
 An assistant for wordle
 
-A WIP assistant for the word game wordle
+Enter the letters in the appropriate spaces and get help with possible guesses
+
