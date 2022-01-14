@@ -163,7 +163,7 @@ class WordleCheat(App):
             candidates = [e1.strip() for e in candidates for e1 in e if e1]
         self.root.ids.grid.clear_widgets()
         for word in candidates:
-            self.root.ids.grid.add_widget(Label(text=word))
+            self.root.ids.grid.add_widget(Label(text=word.upper()))
 
     def clear_inputs(self):
         p = self.root.ids
