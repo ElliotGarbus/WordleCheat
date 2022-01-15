@@ -100,6 +100,7 @@ class WordleCheat(App):
         self.words = ''
 
     def build(self):
+        self.title = 'Wordle Assistant'
         return Builder.load_string(kv)
 
     def on_start(self):
