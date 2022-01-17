@@ -80,12 +80,12 @@ BoxLayout:
 
 
 class LetterInput(TextInput):
-    def one_letter(self, c, undo):
+    def one_letter(self, c, _):
         return c.upper() if len(self.text) == 0 and c.isalpha() else ''
 
 
 class UniqueLettersInput(TextInput):
-    def unique_letters(self, c, undo):
+    def unique_letters(self, c, _):
         if not c.isalpha() or c.upper() in self.text:
             return ''
         else:
@@ -166,7 +166,7 @@ class WordleCheat(App):
             # if a letter is known to be in the text, but the pos is not know, we must put these know letters
             # in all permutations of positions
             pos_unknown = p.pos_unknown.text.lower()
-            search = self.known_unknown_search_pattern(known, pos_unknown )
+            search = self.known_unknown_search_pattern(known, pos_unknown)
         else:
             search = ''.join(known[::])  # if there are no position unknown letters, just use the known letters
 
