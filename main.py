@@ -108,10 +108,9 @@ class WordleCheat(App):
         for _ in range(5):
             self.root.ids.letters.add_widget(LetterInput())
 
-        # load words
+        # load words, Words extracted from Wordle HTML
         with open('words.json') as f:
             self.words = json.load(f)
-        # self.words = '\n'.join(words)
 
     def get_known_letters(self):
         # return a string of the known letters in the proper position, '.' if not known
