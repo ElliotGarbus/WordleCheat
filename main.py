@@ -64,7 +64,7 @@ BoxLayout:
         height: 48
         Button:
             text: 'Enter'
-            on_release: app.find_candidates()
+            on_release: app.find_candidates_list()
             disabled: app.no_input
         Button: 
             text: 'Clear'
@@ -110,12 +110,11 @@ class WordleCheat(App):
 
         # load words
         with open('words.json') as f:
-            words = json.load(f)
-        self.words = '\n'.join(words)
+            self.words = json.load(f)
+        # self.words = '\n'.join(words)
 
-    def find_candidates(self):
-        # create the search terms based on what is know, display candidates
-        # get know letters and positions
+    def get_known_letters(self):
+        # return a string of the known letters in the proper position, '.' if not known
         p = self.root.ids
         known = []
         for letter in p.letters.children[::-1]:
@@ -123,45 +122,60 @@ class WordleCheat(App):
                 known.append(letter.text.lower())
             else:
                 known.append('.')
+        return known
+
+    @staticmethod
+    def known_unknown_search_pattern(known, pos_unknown):
+        # when there are pos_unknown chars, we must permute their positions
+        search = []
+        count = known.count('.') - len(pos_unknown)
+        ss = pos_unknown + '.' * count
+        # print(f'{ss=}')
+        # create a string of the position unknown letters, and the number of places they could be('.')
+        # then create all of the permutations, remove duplicates and build the search string.
+        ss_permutations = permutations(ss, len(ss))
+        perms = set(ss_permutations)  # remove duplicates
+        # position and value of know characters
+        known_poss = [(i, c) for i, c in enumerate(known) if c != '.']
+        # insert known data into permuted data
+        known_and_pos_unknowns = []
+        for perm in perms:  # perm is one permutation
+            # tuple to list
+            pl = list(perm)
+            for k in known_poss:
+                pl.insert(k[0], k[1])  # insert the know letters in the correct spots
+            known_and_pos_unknowns.append(pl)
+        # Convert list of known and unknown chars to search string
+        for term in known_and_pos_unknowns:
+            search.append('(' + ''.join(term) + ')|')
+        return ''.join(search)[:-1]  # remove trailing |
+
+    def find_candidates_list(self):
+        # create the search terms based on what is know, display candidates
+        # get know letters and positions
+        p = self.root.ids
+        known = self.get_known_letters()
         # letters not in the word
         if p.not_in_word.text:
-            nots = '[^' + p.not_in_word.text.lower() + '\n]'
+            nots = '[^' + p.not_in_word.text.lower() + ']'
         else:
             nots = None
         # print(nots)
         # letters in word and pos unknown
-        search = []
         if p.pos_unknown.text:
+            # if a letter is known to be in the text, but the pos is not know, we must put these know letters
+            # in all permutations of positions
             pos_unknown = p.pos_unknown.text.lower()
-            count = known.count('.') - len(pos_unknown)
-            ss = pos_unknown + '.' * count
-            # print(f'{ss=}')
-            ss_permutations = permutations(ss, len(ss))
-            perms = set(ss_permutations)  # remove duplicates
-            # position and value of know characters
-            known_poss = [(i, c) for i, c in enumerate(known) if c != '.']
-            # insert known data into permuted data
-            known_and_pos_unknowns = []
-            for perm in perms:
-                # tuple to list
-                pl = list(perm)
-                for k in known_poss:
-                    pl.insert(k[0], k[1])
-                known_and_pos_unknowns.append(pl)
-            # Convert list of known and unknown chars to search string
-            for term in known_and_pos_unknowns:
-                search.append('(' + ''.join(term) + '\n)|')
-            search = ''.join(search)[:-1]  # remove trailing |
+            search = self.known_unknown_search_pattern(known, pos_unknown )
         else:
-            search = ''.join(known[::])
+            search = ''.join(known[::])  # if there are no position unknown letters, just use the known letters
 
         if nots:
+            # if there are letters we know are NOT in the string, replace '.' with the nots.
             search = search.replace('.', nots)
-        # print(f'{repr(search)}')
-        candidates = re.findall(search, self.words)
-        # print(candidates)
-        if candidates and isinstance(candidates[0], tuple):
-            candidates = [e1.strip() for e in candidates for e1 in e if e1]
+        # print(f'{search=}')
+        pattern = re.compile(search)
+        candidates = [word for word in self.words if pattern.match(word)]
         self.root.ids.grid.clear_widgets()
         for word in candidates:
             self.root.ids.grid.add_widget(Label(text=word.upper()))
