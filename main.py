@@ -204,5 +204,8 @@ class WordleCheat(App):
             if letter in p.not_in_word.text:
                 p.not_in_word.text = p.not_in_word.text.replace(letter, '')
 
+    def open_settings(self, *largs):
+        pass  # do not allow kivy settings to be opened
+
 
 WordleCheat().run()
