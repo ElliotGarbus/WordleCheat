@@ -1,3 +1,4 @@
+import configstartup
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.uix.textinput import TextInput
