@@ -12,7 +12,7 @@ win_icon = '../images/w.ico'
 a = Analysis(['../main.py'],
              pathex=[spec_root],
              binaries=[],
-             datas=[('../words.json', '.'),
+             datas=[('../*.json', '.'),
                     ('../images/*.png', './images')],
              hiddenimports=[],
              hookspath=[],
